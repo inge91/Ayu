@@ -1,7 +1,7 @@
 #ifndef ISLAND_H
 #define ISLAND_H
 
-#include <vector>s
+#include <vector>
 
 struct Island
 {

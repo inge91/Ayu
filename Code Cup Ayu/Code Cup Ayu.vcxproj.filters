@@ -38,5 +38,8 @@
     <ClInclude Include="Island.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Piece.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -3,13 +3,13 @@
 
 class Board;
 
-struct Island;
+#include "Island.h"
 #include <vector>
 
 class Islands
 {
 public:
-	Islands();
+	Islands(Board* board);
 	std::vector<Island> islands;
 
 public:
@@ -20,7 +20,7 @@ public:
 
 private:
 	// Not owned here
-	Board* b;
+	Board* board;
 };
 
 

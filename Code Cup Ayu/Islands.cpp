@@ -1,7 +1,7 @@
 #include "Islands.h"
-#include "Island.h"
 
-Islands::Islands() :
+Islands::Islands(Board* board) :
+	board(board),
 	islands()
 {
 
@@ -29,8 +29,8 @@ void Islands::executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, in
 		}
 	}
 }
-
+/*
 // In case a piece moved we need to make sure that all adjacent pieces are now of the same island.
 void Islands::mergeIslands(std::pair<int, int> endpos)
 {
-}
+}*/
