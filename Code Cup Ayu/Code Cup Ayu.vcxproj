@@ -65,12 +65,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Board.cpp" />
+    <ClCompile Include="BreadthFirst.cpp" />
     <ClCompile Include="Island.cpp" />
     <ClCompile Include="Islands.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Board.h" />
+    <ClInclude Include="BreadthFirst.h" />
     <ClInclude Include="Island.h" />
     <ClInclude Include="Islands.h" />
     <ClInclude Include="Piece.h" />

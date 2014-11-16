@@ -1,7 +1,7 @@
 #include "Board.h"
 
+#include "BreadthFirst.h"
 #include <iostream>
-
 
 Board::Board(BoardContent color):
 islandsAI(this),
@@ -24,52 +24,72 @@ islandsOpponent(this)
 		{
 			if ((x % 2) != 0 && ((y % 2) == 0))
 			{
+				Piece* piece = new Piece(x, y, WHITE);
 				if (colorAI == WHITE)
 				{
-					islandsAI.addIsland(std::pair<int, int>(x, y));
+					
+					islandsAI.addIsland(piece);
 				}
 				else
 				{
-					islandsOpponent.addIsland(std::pair<int, int>(x, y));
+					islandsOpponent.addIsland(piece);
+					Island* s = piece->isLandBelongingTo;
 				}
-				board[x][y] = WHITE;
+				board[x][y] = piece;
 			}
 			else if ((x % 2) == 0 && ((y % 2) != 0))
 			{
+				Piece* piece = new Piece(x, y, BLACK);
 				if (colorAI == BLACK)
 				{
-					islandsAI.addIsland(std::pair<int, int>(x, y));
+					islandsAI.addIsland(piece);
 				}
 				else
 				{
-					islandsOpponent.addIsland(std::pair<int, int>(x, y));
+					islandsOpponent.addIsland(piece);
 				}
-				board[x][y] = BLACK;
+				board[x][y] = piece;
 			}
 			else
 			{
-				board[x][y] = EMPTY;
+				board[x][y] = NULL;
+			}
+		}
+	}
+
+	initializeDistances();
+}
+
+
+void Board::initializeDistances()
+{
+	for (int x = 0; x < 11; x++)
+	{
+		for (int y = 0; y < 11; y++)
+		{
+			if (board[x][y] != NULL)
+			{ 
+				board[x][y]->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(board[x][y], this);
 			}
 		}
 	}
 }
 
 
-std::vector<BoardContent> Board::getNeighbourPieces(std::pair<int, int> position)
+std::vector<Piece*> Board::getNeighbourPieces(Piece* p)
 {
-	std::vector<BoardContent> neighbours;
+	std::vector<Piece*> neighbours;
 
-	int x = position.first;
-	int y = position.second;
-
+	int x = p->x;
+	int y = p->y;
 
 	if (x > 0)
 	{
-		neighbours.push_back(board[x+1][y]); 
+		neighbours.push_back(board[x - 1][y]); 
 	}
 	if (x < 10)
 	{
-		neighbours.push_back(board[x - 1][y]);
+		neighbours.push_back(board[x + 1][y]);
 	}
 	if (y > 0)
 	{
@@ -81,6 +101,34 @@ std::vector<BoardContent> Board::getNeighbourPieces(std::pair<int, int> position
 	}
 
 	return neighbours;
+}
+
+std::vector<std::pair<int, int>> Board::getEmptyNeighbourPositions(Piece* p)
+{
+
+	std::vector<std::pair<int, int>> emptyneighbours;
+
+	int x = p->x;
+	int y = p->y;
+
+	if (x > 0 && board[x - 1][y] == NULL)
+	{
+		emptyneighbours.push_back(std::pair<int, int>(x - 1, y));
+	}
+	if (x < 10 && board[x + 1][y] == NULL)
+	{
+		emptyneighbours.push_back(std::pair<int, int>(x + 1, y));
+	}
+	if (y > 0 && board[x][y - 1] == NULL)
+	{
+		emptyneighbours.push_back(std::pair<int, int>(x , y - 1));
+	}
+	if (y < 10 && board[x][y + 1] == NULL)
+	{
+		emptyneighbours.push_back(std::pair<int, int>(x, y + 1));
+	}
+
+	return emptyneighbours;
 }
 
 // Structuur maken voor elke "tree" die gecreeerd wordt (kan ook een cirkel bevatten!)
@@ -100,8 +148,8 @@ std::string Board::indexToBoardPosition(int x, int y)
 	char horizontalPos = 65 + x;
 
 	// The y is just a single increment from the given index
-	std::string verticalPos = std::to_string(y++);
-	return verticalPos + horizontalPos;
+	std::string verticalPos = std::to_string(y+1);
+	return  horizontalPos + verticalPos;
 }
 
 
@@ -109,7 +157,7 @@ std::pair<int, int> Board::boardPositionToIndex(std::string boardPosition)
 {
 	// A possible board position : B3, so the first charac
 	int x = boardPosition.c_str()[0] - 65;
-	int y = boardPosition.c_str()[1] - 1;
+	int y = std::stoi(boardPosition.substr(1, boardPosition.length())) - 1;
 	return std::pair<int, int>(x, y);
 }
 
@@ -122,18 +170,22 @@ void Board::stdPrintBoard()
 	{
 		for (int x = 0; x < 11; x++)
 		{
-			switch (board[x][y])
+			if (board[x][y] == NULL)
 			{
+				std::cout << ".";
+			}
+			else
+			{
+				switch (board[x][y]->color)
+				{
 				default:
-				case EMPTY:
-					std::cout << ".";
-					break;
 				case BLACK:
 					std::cout << "x";
 					break;
 				case WHITE:
 					std::cout << "o";
 					break;
+				}
 			}
 		}
 		std::cout << "\n";
@@ -150,18 +202,22 @@ void Board::errPrintBoard()
 	{
 		for (int x = 0; x < 11; x++)
 		{
-			switch (board[x][y])
+			if (board[x][y] == NULL)
 			{
-			default:
-			case EMPTY:
 				std::cerr << ".";
-				break;
-			case BLACK:
-				std::cerr << "x";
-				break;
-			case WHITE:
-				std::cerr << "o";
-				break;
+			}
+			else
+			{
+				switch (board[x][y]->color)
+				{
+				default:
+				case BLACK:
+					std::cerr << "x";
+					break;
+				case WHITE:
+					std::cerr << "o";
+					break;
+				}
 			}
 		}
 		std::cerr << "\n";
@@ -169,35 +225,101 @@ void Board::errPrintBoard()
 	std::cerr << "\n";
 }
 
+
 void Board::executeMoveOnBoard(std::string move)
 {
-	std::pair<int, int> beginPos = boardPositionToIndex(move.substr(0, 2));
-	std::pair<int, int> endPos = boardPositionToIndex(move.substr(3, 2));
+	std::regex rgx("(\\w\\d+)-(\\w\\d+)");
+	std::smatch match;
+	std::regex_search(move, match, rgx);
 
-	BoardContent beginColor = board[beginPos.first][beginPos.second];
-	BoardContent endColor = board[endPos.first][endPos.second];
-	if (beginColor == EMPTY || endColor != EMPTY)
+	// Extract the beginning and end position of the move on the board.
+	std::pair<int, int> beginPos = boardPositionToIndex(match[1]);
+	std::pair<int, int> endPos = boardPositionToIndex(match[2]);
+	executeMoveOnBoard(beginPos, endPos);
+}
+
+
+void Board::executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, int> endPos)
+{
+	Piece* pieceToMove = board[beginPos.first][beginPos.second];
+	Piece* endPositionOfPiece = board[endPos.first][endPos.second];
+
+	// Check if the begin position is not empty and the end position is.
+	if (pieceToMove == NULL || endPositionOfPiece != NULL)
 	{
 		fprintf(stderr, "ERROR in Board::executeMoveOnBoard: beginning position was empty or endposition was not empty.");
 		exit(0);
 	}
 	else
 	{
-		// Move on the board
-		board[beginPos.first][beginPos.second] = EMPTY;
-		board[endPos.first][endPos.second] = beginColor;
+		// Move the piece to the new location on the board (also update the inner position of the piece)
+		board[beginPos.first][beginPos.second] = NULL;
+		board[endPos.first][endPos.second] = pieceToMove;
+		pieceToMove->x = endPos.first;
+		pieceToMove->y = endPos.second;
 
-		// Move in the islands.
-		if (beginColor == colorAI)
+		// Remove piece from current island and add to next island
+		pieceToMove->isLandBelongingTo->removePiece(pieceToMove);
+		Island* newIslandPiece;
+		if (pieceToMove->color == colorAI)
 		{
-
+			newIslandPiece = new Island(pieceToMove, &islandsAI);
 		}
 		else
 		{
-
+			newIslandPiece = new Island(pieceToMove, &islandsOpponent);
 		}
 
+
+		// All surrounding pieces of the same colour at the new position should be merged into 
+		// the same island as the newly moved piece.
+		std::vector<Piece*> neighBourPieces = getNeighbourPieces(pieceToMove);
+		for (unsigned int i = 0; i < neighBourPieces.size(); i++)
+		{
+			if (neighBourPieces.at(i) != NULL && neighBourPieces.at(i)->color == pieceToMove->color)
+			{
+				Island* neighbourPieceIsland = neighBourPieces.at(i)->isLandBelongingTo;
+				std::vector<Piece*> islandPieces = neighbourPieceIsland->allPoints;
+
+				for (unsigned int j = 0; j < islandPieces.size(); j++)
+				{
+					newIslandPiece->addPiece(islandPieces.at(j), this);
+				}
+
+				// Remove the islands that have now been merged together.
+				if (pieceToMove->color == colorAI)
+				{
+					islandsAI.removeIsland(neighbourPieceIsland);
+				}
+				else
+				{
+					islandsOpponent.removeIsland(neighbourPieceIsland);
+				}
+			}
+		}
+		if (pieceToMove->color == colorAI)
+		{
+			islandsAI.addIsland(newIslandPiece);
+			//islandsAI.printIslands();
+		}
+		else
+		{
+			islandsOpponent.addIsland(newIslandPiece);
+			//islandsOpponent.printIslands();
+		}
 	}
 }
 
+
+void Board::calculateAndExecuteMoveOnBoard()
+{
+	std::pair<int, int> begin;
+	std::pair<int, int> end;
+	islandsAI.calculateBestMove(begin, end);
+	std::string beginString = indexToBoardPosition(begin.first, begin.second);
+	std::string endString = indexToBoardPosition(end.first, end.second);
+	std::string move = beginString + "-" + endString + "\n";
+	std::cout << move;
+	executeMoveOnBoard(begin, end);
+}
 

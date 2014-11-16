@@ -1,4 +1,7 @@
 #include "Islands.h"
+#include "Island.h"
+
+#include <iostream>
 
 Islands::Islands(Board* board) :
 	board(board),
@@ -8,29 +11,64 @@ Islands::Islands(Board* board) :
 }
 
 
-void Islands::addIsland(std::pair<int, int> position)
+void Islands::addIsland(Piece* piece)
 {
-	islands.push_back(position);
+	islands.push_back(new Island(piece, this));
 }
 
 
-void Islands::executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, int> endPos)
+void Islands::addIsland(Island* island)
 {
-	// Check all islands to see which one changes
-	for (Island island : islands)
+	islands.push_back(island);
+}
+
+
+void Islands::removeIsland(Island* island)
+{
+	for (unsigned int i = 0; i < islands.size(); i++)
 	{
-		for (std::pair<int, int> point : island.allPoints)
+		if (islands.at(i) == island)
 		{
-			if (point == beginPos)
-			{
-				island.removePiece(beginPos);
-				island.addPiece(endPos);
-			}
+			islands.erase(islands.begin() + i);
 		}
 	}
 }
-/*
-// In case a piece moved we need to make sure that all adjacent pieces are now of the same island.
-void Islands::mergeIslands(std::pair<int, int> endpos)
+
+
+void Islands::printIslands()
 {
-}*/
+	std::cout << "Number of islands: " << islands.size() << "\n";
+	for (unsigned int i = 0; i < islands.size(); i++)
+	{
+		islands.at(i)->printIslandContents();
+	}
+}
+
+
+void Islands::calculateBestMove(std::pair<int, int> &beginPos, std::pair<int, int> &endPos)
+{
+	bool found_move = false;
+	for (int i = 0; i < islands.size(); i++)
+	{
+		for (int j = 0; j < islands.at(i)->endpoints.size(); j++)
+		{
+			beginPos.first = islands.at(i)->endpoints.at(j)->x;
+			beginPos.second = islands.at(i)->endpoints.at(j)->y;
+
+			std::vector<std::pair<int, int>> destinations = islands.at(i)->getPossibleMoves(islands.at(i)->endpoints.at(j), board);
+			if (destinations.size() > 0)
+			{
+				endPos.first = destinations.at(0).first;
+				endPos.second = destinations.at(0).second;
+				found_move = true;
+				break;
+			}
+		}
+		if (found_move)
+		{
+			break;
+		}
+	}
+}
+
+

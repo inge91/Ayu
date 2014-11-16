@@ -1,12 +1,14 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+struct Piece;
 #include "Islands.h"
 
+#include <regex>
 #include <string>
+#include <vector>
 enum BoardContent
 {
-	EMPTY,
 	WHITE,
 	BLACK
 };
@@ -16,11 +18,28 @@ class Board
 public:
 	Board(BoardContent color);
 
-	std::vector<BoardContent> getNeighbourPieces(std::pair<int, int> position);
+	void initializeDistances();
+
+	std::vector<Piece*> getNeighbourPieces(Piece* p);
+	std::vector<std::pair<int, int>> getEmptyNeighbourPositions(Piece* p);
+
+	void stdPrintBoard();
+	void errPrintBoard();
+
+	void executeMoveOnBoard(std::string move);
+	void executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, int> endPos);
+	void calculateAndExecuteMoveOnBoard();
+
+private:
+	std::string indexToBoardPosition(int x, int y);
+	std::pair<int, int> boardPositionToIndex(std::string boardPosition);
+
 
 private:
 	int boardSize;
-	BoardContent board[11][11];
+	// The board consists of pointers ot Pieces, or NULL in case
+	// the position on the board is empty.
+	Piece* board[11][11];
 	BoardContent colorOpponent;
 	// Should be allocated
 	Islands islandsOpponent;
@@ -28,18 +47,7 @@ private:
 	BoardContent colorAI;
 	// Should be allocated
 	Islands islandsAI;
-	
-	
 
-public:
-	void executeMoveOnBoard(std::string move);
-
-private:
-	std::string indexToBoardPosition(int x, int y);
-	std::pair<int, int> boardPositionToIndex(std::string boardPosition);
-
-	void stdPrintBoard();
-	void errPrintBoard();
 };
 
 

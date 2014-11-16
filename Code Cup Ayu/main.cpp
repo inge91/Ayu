@@ -5,7 +5,7 @@
 
 BoardContent getColor(std::string input)
 {
-	if (input.compare("Start"))
+	if (input.compare("Start") == 0)
 	{
 		return WHITE;
 	}
@@ -21,27 +21,31 @@ int main()
 	std::getline(std::cin, input);
 
 	Board b(getColor(input));
-
-
-	if (!input.compare("Start"))
+	// The opponent started the game so
+	// the move has to be executed on the board.
+	if (input.compare("Start") != 0)
 	{
-		Board b = Board(BLACK);
 		b.executeMoveOnBoard(input);
-		// QQQ Execute own move
+		b.stdPrintBoard();
 	}
-
 	
+	b.calculateAndExecuteMoveOnBoard();
+
+
+	b.stdPrintBoard();
 	while (true)
 	{
 		std::getline(std::cin, input);
-		if (input.compare("Quit"))
+		if (input.compare("Quit") == 0)
 		{
 			break;
 		}
 		else
 		{
 			b.executeMoveOnBoard(input);
-			// QQQ Execute own move
+			b.stdPrintBoard();
+			b.calculateAndExecuteMoveOnBoard();
+			b.stdPrintBoard();
 		}
 	}
 }

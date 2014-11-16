@@ -27,6 +27,9 @@
     <ClCompile Include="Island.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BreadthFirst.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Board.h">
@@ -39,6 +42,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Piece.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BreadthFirst.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
