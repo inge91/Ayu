@@ -15,6 +15,10 @@ struct Island
 		endpoints(),
 		islands(islands)
 	{
+		for (int i = 0; i < newIsland->closestPieces.size(); i++)
+		{
+			piecesInIslandClosestToOtherIslands.push_back(newIsland);
+		}
 		newIsland->isLandBelongingTo = this;
 		allPoints.push_back(newIsland);
 		endpoints.push_back(newIsland);
@@ -24,18 +28,19 @@ struct Island
 	// These are the endpoints of the islands that can be moved around on the board.
 	std::vector<Piece*> endpoints;
 
-	void removePiece(Piece* p);
 	void addPiece(Piece* p, Board* b);
 	// Pieces that used to be endpieces need to be reevaluated and possibly be removed from this list.
 	void reevaluatEndPiece(Piece* pieceToReevaluate, Board* b);
-
+	void setClosestPoints(Piece* p);
 	void removeEndPoint(Piece* piece);
 	bool isEndpoint(Piece* piece);
+	bool isPartOfIsland(Piece* piece);
+	bool pointBecameCloser(std::pair<Piece*, int> piece);
 	std::vector<std::pair<int, int>> getPossibleMoves(Piece* piece, Board* b);
 
 	void printIslandContents();
 
-	std::vector<Piece*> pieceInIslandClosestToOtherPieces;
+	std::vector<Piece*> piecesInIslandClosestToOtherIslands;
 
 	// Not owned here
 	Islands* islands;

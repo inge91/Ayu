@@ -10,7 +10,8 @@ struct Piece;
 enum BoardContent
 {
 	WHITE,
-	BLACK
+	BLACK,
+	NONE
 };
 
 class Board

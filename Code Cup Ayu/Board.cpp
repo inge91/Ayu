@@ -52,7 +52,7 @@ islandsOpponent(this)
 			}
 			else
 			{
-				board[x][y] = NULL;
+				board[x][y] = new Piece(x, y, NONE);
 			}
 		}
 	}
@@ -67,9 +67,10 @@ void Board::initializeDistances()
 	{
 		for (int y = 0; y < 11; y++)
 		{
-			if (board[x][y] != NULL)
+			if (board[x][y]->color != NONE)
 			{ 
-				board[x][y]->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(board[x][y], this);
+				board[x][y]->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(board[x][y], this, true);
+				board[x][y]->isLandBelongingTo->setClosestPoints(board[x][y]);
 			}
 		}
 	}
@@ -111,19 +112,19 @@ std::vector<std::pair<int, int>> Board::getEmptyNeighbourPositions(Piece* p)
 	int x = p->x;
 	int y = p->y;
 
-	if (x > 0 && board[x - 1][y] == NULL)
+	if (x > 0 && board[x - 1][y]->color == NONE)
 	{
 		emptyneighbours.push_back(std::pair<int, int>(x - 1, y));
 	}
-	if (x < 10 && board[x + 1][y] == NULL)
+	if (x < 10 && board[x + 1][y]->color == NONE)
 	{
 		emptyneighbours.push_back(std::pair<int, int>(x + 1, y));
 	}
-	if (y > 0 && board[x][y - 1] == NULL)
+	if (y > 0 && board[x][y - 1]->color == NONE)
 	{
 		emptyneighbours.push_back(std::pair<int, int>(x , y - 1));
 	}
-	if (y < 10 && board[x][y + 1] == NULL)
+	if (y < 10 && board[x][y + 1]->color == NONE)
 	{
 		emptyneighbours.push_back(std::pair<int, int>(x, y + 1));
 	}
@@ -170,7 +171,7 @@ void Board::stdPrintBoard()
 	{
 		for (int x = 0; x < 11; x++)
 		{
-			if (board[x][y] == NULL)
+			if (board[x][y]->color == NONE)
 			{
 				std::cout << ".";
 			}
@@ -202,7 +203,7 @@ void Board::errPrintBoard()
 	{
 		for (int x = 0; x < 11; x++)
 		{
-			if (board[x][y] == NULL)
+			if (board[x][y]->color == NONE)
 			{
 				std::cerr << ".";
 			}
@@ -245,7 +246,7 @@ void Board::executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, int>
 	Piece* endPositionOfPiece = board[endPos.first][endPos.second];
 
 	// Check if the begin position is not empty and the end position is.
-	if (pieceToMove == NULL || endPositionOfPiece != NULL)
+	if (pieceToMove->color == NONE || endPositionOfPiece->color != NONE)
 	{
 		fprintf(stderr, "ERROR in Board::executeMoveOnBoard: beginning position was empty or endposition was not empty.");
 		exit(0);
@@ -253,37 +254,38 @@ void Board::executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, int>
 	else
 	{
 		// Move the piece to the new location on the board (also update the inner position of the piece)
-		board[beginPos.first][beginPos.second] = NULL;
+		board[beginPos.first][beginPos.second] = endPositionOfPiece;
 		board[endPos.first][endPos.second] = pieceToMove;
 		pieceToMove->x = endPos.first;
 		pieceToMove->y = endPos.second;
+		endPositionOfPiece->x = beginPos.first;
+		endPositionOfPiece->y = beginPos.second;
+
+		// Update closest pieces
+		pieceToMove->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(pieceToMove, this, true);
 
 		// Remove piece from current island and add to next island
-		pieceToMove->isLandBelongingTo->removePiece(pieceToMove);
-		Island* newIslandPiece;
-		if (pieceToMove->color == colorAI)
-		{
-			newIslandPiece = new Island(pieceToMove, &islandsAI);
-		}
-		else
-		{
-			newIslandPiece = new Island(pieceToMove, &islandsOpponent);
-		}
-
-
+		Island* islandOfMovedPiece = pieceToMove->isLandBelongingTo;
+	
 		// All surrounding pieces of the same colour at the new position should be merged into 
 		// the same island as the newly moved piece.
 		std::vector<Piece*> neighBourPieces = getNeighbourPieces(pieceToMove);
 		for (unsigned int i = 0; i < neighBourPieces.size(); i++)
 		{
-			if (neighBourPieces.at(i) != NULL && neighBourPieces.at(i)->color == pieceToMove->color)
+			if (neighBourPieces.at(i)->color != NONE && neighBourPieces.at(i)->color == pieceToMove->color)
 			{
 				Island* neighbourPieceIsland = neighBourPieces.at(i)->isLandBelongingTo;
+				if (neighbourPieceIsland == islandOfMovedPiece)
+				{
+					continue;
+				}
+
 				std::vector<Piece*> islandPieces = neighbourPieceIsland->allPoints;
 
 				for (unsigned int j = 0; j < islandPieces.size(); j++)
 				{
-					newIslandPiece->addPiece(islandPieces.at(j), this);
+					islandPieces.at(j)->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(islandPieces.at(j), this, true);
+					islandOfMovedPiece->addPiece(islandPieces.at(j), this);
 				}
 
 				// Remove the islands that have now been merged together.
@@ -297,17 +299,8 @@ void Board::executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, int>
 				}
 			}
 		}
-		if (pieceToMove->color == colorAI)
-		{
-			islandsAI.addIsland(newIslandPiece);
-			//islandsAI.printIslands();
-		}
-		else
-		{
-			islandsOpponent.addIsland(newIslandPiece);
-			//islandsOpponent.printIslands();
-		}
 	}
+	//islandsAI.printIslands();
 }
 
 

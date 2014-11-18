@@ -30,6 +30,7 @@ void Islands::removeIsland(Island* island)
 		if (islands.at(i) == island)
 		{
 			islands.erase(islands.begin() + i);
+			delete island;
 		}
 	}
 }

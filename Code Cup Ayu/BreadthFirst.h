@@ -11,7 +11,7 @@ struct Piece;
 class BreadthFirst
 {
 public:
-	static std::vector<std::pair<Piece*, int>> CalculateClosestSameColoredPieces(Piece* piece, Board* b);
+	static std::vector<std::pair<Piece*, int>> CalculateClosestSameColoredPieces(Piece* piece, Board* b, bool ignoreConnectedPieces);
 	static bool pieceInVector(Piece* piece, std::vector<Piece*> pieces);
 
 };

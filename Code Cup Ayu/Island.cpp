@@ -1,63 +1,40 @@
 #include "Island.h"
 #include "Board.h"
+#include "BreadthFirst.h"
 #include <iostream>
-
-// It is not possible to remove pieces REMOVE THIS FUNCTION
-
-void Island::removePiece(Piece* piece)
-{
-	for (unsigned int i = 0; i < allPoints.size(); i ++)
-	{
-		if (allPoints.at(i) == piece)
-		{
-			allPoints.erase(allPoints.begin() + i);
-			break;
-		}
-		if (i == allPoints.size() - 1)
-		{
-			fprintf(stderr, "ERROR in Island::removePiece: position does not occur in all points");
-		}
-	}
-
-	removeEndPoint(piece);
-	piece->isLandBelongingTo = NULL;
-
-	// In case this piece 
-
-	
-	if (allPoints.empty())
-	{
-		islands->removeIsland(this);
-		delete this;
-	}
-}
 
 //QQQ can't deal yet with circular constructions...
 void Island::addPiece(Piece* pieceToAdd, Board* b)
 {
-	pieceToAdd->isLandBelongingTo = this;
-	allPoints.push_back(pieceToAdd);
-
-	std::vector<Piece*> neighbourPieces = b->getNeighbourPieces(pieceToAdd);
-	int sameColoredNeighbourPieces = 0;
-	for (unsigned int i = 0; i < neighbourPieces.size(); i++)
+	if (!isPartOfIsland(pieceToAdd))
 	{
-		if (neighbourPieces.at(i) != NULL && neighbourPieces.at(i)->color == pieceToAdd->color)
+		pieceToAdd->isLandBelongingTo = this;
+		allPoints.push_back(pieceToAdd);
+
+		std::vector<Piece*> neighbourPieces = b->getNeighbourPieces(pieceToAdd);
+		int sameColoredNeighbourPieces = 0;
+		for (unsigned int i = 0; i < neighbourPieces.size(); i++)
 		{
-			sameColoredNeighbourPieces++;
+			if (neighbourPieces.at(i)->color != NONE && neighbourPieces.at(i)->color == pieceToAdd->color)
+			{
+				sameColoredNeighbourPieces++;
+			}
 		}
-	}
-	if (sameColoredNeighbourPieces <= 1)
-	{
-		endpoints.push_back(pieceToAdd);
-	}
-
-	// Reevalute 
-	for (unsigned int i = 0; i < neighbourPieces.size(); i++)
-	{
-		if (neighbourPieces.at(i) != NULL && neighbourPieces.at(i)->color == pieceToAdd->color)
+		if (sameColoredNeighbourPieces <= 1)
 		{
-			reevaluatEndPiece(neighbourPieces.at(i), b);
+			endpoints.push_back(pieceToAdd);
+		}
+		
+		piecesInIslandClosestToOtherIslands.clear();
+		for (int i = 0; i < allPoints.size(); i++)
+		{
+			reevaluatEndPiece(allPoints.at(i), b);
+			// QQQI give closestsamecoloredpieces knowledge about which island a piece belongs to so that closest pieces from this island are ignored
+			allPoints.at(i)->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(allPoints.at(i), b, true);
+
+			// If this piece is closer to another piece that is not part of this island than the current closest piece that is not part of this island
+			// we change the piece that is closest to another piece.
+			setClosestPoints(allPoints.at(i));
 		}
 	}
 }
@@ -65,24 +42,64 @@ void Island::addPiece(Piece* pieceToAdd, Board* b)
 // Piece that used to be an endpoint but a new piece came between needs to be reevaluated if it still should belong to endpoints
 void Island::reevaluatEndPiece(Piece* pieceToReevaluate, Board* b)
 {
-	if (isEndpoint(pieceToReevaluate))
+
+	std::vector<Piece*> neighbourPieces = b->getNeighbourPieces(pieceToReevaluate);
+	int sameColoredNeighbourPieces = 0;
+	for (unsigned int i = 0; i < neighbourPieces.size(); i++)
 	{
-		std::vector<Piece*> neighbourPieces = b->getNeighbourPieces(pieceToReevaluate);
-		int sameColoredNeighbourPieces = 0;
-		for (unsigned int i = 0; i < neighbourPieces.size(); i++)
+		if (neighbourPieces.at(i)->color != NONE && neighbourPieces.at(i)->color == pieceToReevaluate->color)
 		{
-			if (neighbourPieces.at(i) != NULL && neighbourPieces.at(i)->color == pieceToReevaluate->color)
-			{
-				sameColoredNeighbourPieces++;
-			}
+			sameColoredNeighbourPieces++;
 		}
-		if (sameColoredNeighbourPieces > 1)
+	}
+	if (sameColoredNeighbourPieces > 1 && isEndpoint(pieceToReevaluate))
+	{
+		removeEndPoint(pieceToReevaluate);
+	}
+	else if (sameColoredNeighbourPieces <= 1 && !isEndpoint(pieceToReevaluate))
+	{
+		endpoints.push_back(pieceToReevaluate);
+	}
+
+}
+
+
+void Island::setClosestPoints(Piece* p)
+{
+
+	// In case some closest points were already based on this Piece, they should be deleted
+	// And we should start over.
+	for (int i = 0; i < piecesInIslandClosestToOtherIslands.size(); i++)
+	{
+		if (piecesInIslandClosestToOtherIslands.at(i) == p)
 		{
-			removeEndPoint(pieceToReevaluate);
+			piecesInIslandClosestToOtherIslands.erase(piecesInIslandClosestToOtherIslands.begin() + i);
+		}
+	}
+
+	for (int i = 0; i < p->closestPieces.size(); i++)
+	{
+		if (p->closestPieces.at(i).first->isLandBelongingTo != this)
+		{
+			if (piecesInIslandClosestToOtherIslands.size() == 0 || 
+				(p->closestPieces.at(i).second < piecesInIslandClosestToOtherIslands.at(0)->closestPieces.at(0).second
+				&& p->closestPieces.at(i).second > 2))
+			{
+				piecesInIslandClosestToOtherIslands.clear();
+				piecesInIslandClosestToOtherIslands.push_back(p);
+				break;
+			}
+			else if ((p->closestPieces.at(i).second == piecesInIslandClosestToOtherIslands.at(0)->closestPieces.at(0).second
+				&& p->closestPieces.at(i).second > 2))
+			{
+				piecesInIslandClosestToOtherIslands.push_back(p);
+				break;
+			}
 		}
 	}
 }
-\
+
+
 void Island::removeEndPoint(Piece* piece)
 {
 	for (unsigned int i = 0; i < endpoints.size(); i++)
@@ -112,6 +129,35 @@ bool Island::isEndpoint(Piece* piece)
 }
 
 
+bool Island::isPartOfIsland(Piece* piece)
+{
+	for (unsigned int i = 0; i < allPoints.size(); i++)
+	{
+		if (allPoints.at(i) == piece)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Island::pointBecameCloser(std::pair<Piece*, int> piece)
+{
+	for (unsigned int i = 0; i < piecesInIslandClosestToOtherIslands.size(); i++)
+	{
+		for (int j = 0; j < piecesInIslandClosestToOtherIslands.at(i)->closestPieces.size(); j++)
+		{
+			if (piecesInIslandClosestToOtherIslands.at(i)->closestPieces.at(j).first == piece.first 
+				&& piecesInIslandClosestToOtherIslands.at(i)->closestPieces.at(j).second > piece.second)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
 std::vector<std::pair<int, int>> Island::getPossibleMoves(Piece* piece, Board* b)
 {
 	std::vector < std::pair<int, int>> possibleDestinations;
@@ -121,12 +167,24 @@ std::vector<std::pair<int, int>> Island::getPossibleMoves(Piece* piece, Board* b
 		// In case the island is a singleton return all adjacent spaces that are empty as possible destinations.
 		if (allPoints.size() == 1)
 		{
-			std::vector<std::pair<int, int>> neighbourPoints = b->getEmptyNeighbourPositions(piece);
+			std::vector<Piece*> neighbourPoints = b->getNeighbourPieces(piece);
 			for (int i = 0; i < neighbourPoints.size(); i++)
 			{
-			
-				possibleDestinations.push_back(std::pair<int, int>(neighbourPoints.at(i).first, neighbourPoints.at(i).second));
-				
+				// Possible destinations should decrease the distance to current closest pieces
+				if (neighbourPoints.at(i)->color == NONE)
+				{
+					neighbourPoints.at(i)->color = piece->color;
+					std::vector<std::pair<Piece*, int>> closestPoints = BreadthFirst::CalculateClosestSameColoredPieces(neighbourPoints.at(i), b, false);
+					neighbourPoints.at(i)->color = NONE;
+					for (int j = 0; j < closestPoints.size(); j++)
+					{
+						if (pointBecameCloser(closestPoints.at(j)))
+						{
+							possibleDestinations.push_back(std::pair<int, int>(neighbourPoints.at(i)->x, neighbourPoints.at(i)->y));
+							break;
+						}
+					}
+				}				
 			}
 
 			return possibleDestinations;
@@ -134,22 +192,38 @@ std::vector<std::pair<int, int>> Island::getPossibleMoves(Piece* piece, Board* b
 		// All adjacent empty spaces to the other points in the island are possible destinations
 		else
 		{
-			// QQI should also decrease distance to nearest other group, not increase it :( The distance between two pieces is the shortest path of adjacent empty points between them
-			for (unsigned int i = 0; i < allPoints.size(); i++)
+			// Loop over all pieces in Island that current piece could attach to
+			for (unsigned int i = 0; i < piecesInIslandClosestToOtherIslands.size(); i++)
 			{
 				// Do not include the own endpoint
-				if (allPoints.at(i) == piece)
+				if (piecesInIslandClosestToOtherIslands.at(i) == piece)
 				{
 					continue;
 				}
 				else
 				{
-					std::vector<std::pair<int, int>> neighbourPoints = b->getEmptyNeighbourPositions(piece);
-					for (int i = 0; i < neighbourPoints.size(); i++)
+					std::vector<Piece*> neighbourPoints = b->getNeighbourPieces(piecesInIslandClosestToOtherIslands.at(i));
+					// Loop over all neighbour positions of the piece the piece could attach tos
+					for (int j = 0; j < neighbourPoints.size(); j++)
 					{
-						if (neighbourPoints.at(i).first != piece->x && neighbourPoints.at(i).second != piece->y)
+						// Possible destinations should decrease the distance to current closest pieces
+						if (neighbourPoints.at(j)->color == NONE)
 						{
-							possibleDestinations.push_back(std::pair<int, int>(neighbourPoints.at(i).first, neighbourPoints.at(i).second));
+							neighbourPoints.at(j)->color = piece->color;
+							std::vector<std::pair<Piece*, int>> closestPoints = BreadthFirst::CalculateClosestSameColoredPieces(neighbourPoints.at(j), b, false);
+							neighbourPoints.at(j)->color = NONE;
+							// Loop over all closts points to check if there is a decrease in distance to closest pieces.
+							for (int k = 0; k < closestPoints.size(); k++)
+							{
+						
+								if (pointBecameCloser(closestPoints.at(k)))
+								{
+									possibleDestinations.push_back(std::pair<int, int>(neighbourPoints.at(j)->x, neighbourPoints.at(j)->y));
+									break;
+								}
+							
+
+							}
 						}
 					}
 				}
