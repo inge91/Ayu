@@ -19,8 +19,8 @@ public:
 	void addIsland(Island* island);
 	void removeIsland(Island* island);
 	void printIslands();
-
-	void calculateBestMove(std::pair<int, int> &beginPos, std::pair<int, int> &endPos);
+	int getNumberOfIslands();
+	std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> getPossibleActions();
 
 public:
 	std::vector<Island*> islands;

@@ -3,7 +3,6 @@
 
 struct Piece;
 #include "Islands.h"
-
 #include <regex>
 #include <string>
 #include <vector>
@@ -30,6 +29,15 @@ public:
 	void executeMoveOnBoard(std::string move);
 	void executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, int> endPos);
 	void calculateAndExecuteMoveOnBoard();
+	void calculateBestMove(std::pair<int, int> &beginPos, std::pair<int, int> &endPos);
+
+	Islands getIslandsAI();
+	Islands getIslandsOpponent();
+
+	BoardContent getAIColor();
+	BoardContent getOpponentColor();
+
+	BoardContent getGameWonBy();
 
 private:
 	std::string indexToBoardPosition(int x, int y);

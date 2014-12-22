@@ -29,6 +29,8 @@ struct Island
 	std::vector<Piece*> endpoints;
 
 	void addPiece(Piece* p, Board* b);
+
+	void reevaluateIsland(Board* b);
 	// Pieces that used to be endpieces need to be reevaluated and possibly be removed from this list.
 	void reevaluatEndPiece(Piece* pieceToReevaluate, Board* b);
 	void setClosestPoints(Piece* p);

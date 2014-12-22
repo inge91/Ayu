@@ -45,31 +45,34 @@ void Islands::printIslands()
 	}
 }
 
-
-void Islands::calculateBestMove(std::pair<int, int> &beginPos, std::pair<int, int> &endPos)
+int Islands::getNumberOfIslands()
 {
+	return islands.size();
+}
+
+
+std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> Islands::getPossibleActions()
+{
+	std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> possibleActions;
 	bool found_move = false;
 	for (int i = 0; i < islands.size(); i++)
 	{
 		for (int j = 0; j < islands.at(i)->endpoints.size(); j++)
 		{
+			std::pair<int, int> beginPos;
 			beginPos.first = islands.at(i)->endpoints.at(j)->x;
 			beginPos.second = islands.at(i)->endpoints.at(j)->y;
 
-			std::vector<std::pair<int, int>> destinations = islands.at(i)->getPossibleMoves(islands.at(i)->endpoints.at(j), board);
-			if (destinations.size() > 0)
+			std::vector<std::pair<int, int>> possibleActionsIsland = islands.at(i)->getPossibleMoves(islands.at(i)->endpoints.at(j), board);
+			for (int k = 0; k < possibleActionsIsland.size(); k++)
 			{
-				endPos.first = destinations.at(0).first;
-				endPos.second = destinations.at(0).second;
-				found_move = true;
-				break;
+				std::pair<int, int> endPos;
+				endPos = possibleActionsIsland.at(k);
+				possibleActions.push_back(std::pair<std::pair<int, int>, std::pair<int, int>>(beginPos, endPos));
 			}
 		}
-		if (found_move)
-		{
-			break;
-		}
 	}
+	return possibleActions;
 }
 
 

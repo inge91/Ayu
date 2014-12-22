@@ -97,11 +97,13 @@ int main()
 			if (readFromFile)
 			{
 				b.stdPrintBoard();
+				std::cout << "Move by opponent " << std::endl;
 			}
 			b.calculateAndExecuteMoveOnBoard();
 			if (readFromFile)
 			{
 				b.stdPrintBoard();
+				std::cout << "Move by AI " << std::endl;
 			}
 		}
 	}

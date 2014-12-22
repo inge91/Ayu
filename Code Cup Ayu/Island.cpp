@@ -24,20 +24,25 @@ void Island::addPiece(Piece* pieceToAdd, Board* b)
 		{
 			endpoints.push_back(pieceToAdd);
 		}
-		
-		piecesInIslandClosestToOtherIslands.clear();
-		for (int i = 0; i < allPoints.size(); i++)
-		{
-			reevaluatEndPiece(allPoints.at(i), b);
-			// QQQI give closestsamecoloredpieces knowledge about which island a piece belongs to so that closest pieces from this island are ignored
-			allPoints.at(i)->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(allPoints.at(i), b, true);
-
-			// If this piece is closer to another piece that is not part of this island than the current closest piece that is not part of this island
-			// we change the piece that is closest to another piece.
-			setClosestPoints(allPoints.at(i));
-		}
+		reevaluateIsland(b);
 	}
 }
+
+void Island::reevaluateIsland(Board* b)
+{
+	piecesInIslandClosestToOtherIslands.clear();
+	for (int i = 0; i < allPoints.size(); i++)
+	{
+		reevaluatEndPiece(allPoints.at(i), b);
+		// QQQI give closestsamecoloredpieces knowledge about which island a piece belongs to so that closest pieces from this island are ignored
+		allPoints.at(i)->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(allPoints.at(i), b, true);
+
+		// If this piece is closer to another piece that is not part of this island than the current closest piece that is not part of this island
+		// we change the piece that is closest to another piece.
+		setClosestPoints(allPoints.at(i));
+	}
+}
+
 
 // Piece that used to be an endpoint but a new piece came between needs to be reevaluated if it still should belong to endpoints
 void Island::reevaluatEndPiece(Piece* pieceToReevaluate, Board* b)
@@ -210,8 +215,10 @@ std::vector<std::pair<int, int>> Island::getPossibleMoves(Piece* piece, Board* b
 						if (neighbourPoints.at(j)->color == NONE)
 						{
 							neighbourPoints.at(j)->color = piece->color;
+							neighbourPoints.at(j)->isLandBelongingTo = this;
 							std::vector<std::pair<Piece*, int>> closestPoints = BreadthFirst::CalculateClosestSameColoredPieces(neighbourPoints.at(j), b, false);
 							neighbourPoints.at(j)->color = NONE;
+							neighbourPoints.at(j)->isLandBelongingTo = NULL;
 							// Loop over all closts points to check if there is a decrease in distance to closest pieces.
 							for (int k = 0; k < closestPoints.size(); k++)
 							{

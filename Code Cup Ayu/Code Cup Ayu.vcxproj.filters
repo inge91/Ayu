@@ -30,6 +30,12 @@
     <ClCompile Include="BreadthFirst.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MinimaxAlphaBetaPruning.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BoardRepresentation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Board.h">
@@ -45,6 +51,18 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="BreadthFirst.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LearnData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LearningData.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MinimaxAlphaBetaPruning.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BoardRepresentation.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

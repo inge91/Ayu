@@ -1,6 +1,7 @@
 #include "Board.h"
 
 #include "BreadthFirst.h"
+#include "MinimaxAlphaBetaPruning.h"
 #include <iostream>
 
 Board::Board(BoardContent color):
@@ -53,6 +54,7 @@ islandsOpponent(this)
 			else
 			{
 				board[x][y] = new Piece(x, y, NONE);
+				board[x][y]->isLandBelongingTo = NULL;
 			}
 		}
 	}
@@ -263,7 +265,7 @@ void Board::executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, int>
 
 		// Update closest pieces
 		pieceToMove->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(pieceToMove, this, true);
-
+		pieceToMove->isLandBelongingTo->reevaluateIsland(this);
 		// Remove piece from current island and add to next island
 		Island* islandOfMovedPiece = pieceToMove->isLandBelongingTo;
 	
@@ -306,9 +308,19 @@ void Board::executeMoveOnBoard(std::pair<int, int> beginPos, std::pair<int, int>
 
 void Board::calculateAndExecuteMoveOnBoard()
 {
+	for (int i = 0; i < islandsAI.getNumberOfIslands(); i++)
+	{
+		std::vector<Piece*> islandPieces = islandsAI.islands.at(i)->allPoints;
+		for (unsigned int j = 0; j < islandPieces.size(); j++)
+		{
+			islandPieces.at(j)->closestPieces = BreadthFirst::CalculateClosestSameColoredPieces(islandPieces.at(j), this, true);
+		}
+		islandsAI.islands.at(i)->reevaluateIsland(this);
+	}
+	
 	std::pair<int, int> begin;
 	std::pair<int, int> end;
-	islandsAI.calculateBestMove(begin, end);
+	calculateBestMove(begin, end);
 	std::string beginString = indexToBoardPosition(begin.first, begin.second);
 	std::string endString = indexToBoardPosition(end.first, end.second);
 	std::string move = beginString + "-" + endString + "\n";
@@ -316,3 +328,76 @@ void Board::calculateAndExecuteMoveOnBoard()
 	executeMoveOnBoard(begin, end);
 }
 
+
+void Board::calculateBestMove(std::pair<int, int> &beginPos, std::pair<int, int> &endPos)
+{
+	int maxScore = -9999;
+	std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> possibleActions = islandsAI.getPossibleActions(); 
+	if (possibleActions.size() < 10)
+	{
+		for (int i = 0; i < possibleActions.size(); i++)
+		{
+			Board* boardTemp = new Board(*this);
+			std::pair<std::pair<int, int>, std::pair<int, int>> possibleAction = possibleActions.at(i);
+			//stdPrintBoard();
+			boardTemp->executeMoveOnBoard(possibleAction.first, possibleAction.second);
+			//boardTemp.stdPrintBoard();
+			int score = alphabeta(*boardTemp, 2, false);
+			if (maxScore <= score)
+			{
+				maxScore = score;
+				beginPos.first = possibleAction.first.first;
+				beginPos.second = possibleAction.first.second;
+				endPos.first = possibleAction.second.first;
+				endPos.second = possibleAction.second.second;
+			}
+			delete boardTemp;
+		}
+	}
+	else
+	{
+		beginPos.first = possibleActions.at(0).first.first;
+		beginPos.second = possibleActions.at(0).first.second;
+		endPos.first = possibleActions.at(0).second.first;;
+		endPos.second = possibleActions.at(0).second.second;
+	}
+}
+
+
+Islands Board::getIslandsAI()
+{
+	return islandsAI;
+}
+
+
+Islands Board::getIslandsOpponent()
+{
+	return islandsOpponent;
+}
+
+BoardContent Board::getAIColor()
+{
+	return colorAI;
+}
+
+BoardContent Board::getOpponentColor()
+{
+	return colorOpponent;
+}
+
+
+BoardContent Board::getGameWonBy()
+{
+	std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> possibleActions = islandsAI.getPossibleActions();
+	if (possibleActions.size() == 0)
+	{
+		return colorAI;
+	}
+	std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> possibleActionsOpponents = islandsOpponent.getPossibleActions();
+	if (possibleActionsOpponents.size() == 0)
+	{
+		return colorOpponent;
+	}
+	
+	return NONE;
+}
